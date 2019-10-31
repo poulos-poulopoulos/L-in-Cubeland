@@ -1,0 +1,25 @@
+GLUT_ICON ICON DISCARDABLE LiC.ico
+
+1 VERSIONINFO
+FILEVERSION 0
+PRODUCTVERSION 0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "OriginalFilename", "LiC.exe"
+      VALUE "InternalName", "LiC"
+      VALUE "FileDescription", "L in Cubeland - main executable"
+      VALUE "FileVersion", "0.0.0"
+      VALUE "ProductName", "L in Cubeland"
+      VALUE "ProductVersion", "0.0.0"
+      VALUE "CompanyName", "poulos poulopoulos"
+      VALUE "LegalCopyright", "poulos poulopoulos"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
