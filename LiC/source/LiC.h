@@ -153,7 +153,7 @@ public:
     void HandleCollision();
     bool Moving();
     void StopMove();
-    void ContinueMove();
+    bool ContinueMove();
     void Fall();
     void TurnRight();
     void TurnLeft();
@@ -184,6 +184,8 @@ private:
     Game::GridVisibility grid_lines, grid_planes;
     StillCamera *still_cameras[4];
     int still_camera;
+    bool cubes_collapsing;
+    bool **collapse_map;
     void VisualizeWalls();
 public:
     enum Event{START, POSITION_RESET, COLLISION, CUBE_CREATED, CUBE_OBTAINED,
@@ -203,8 +205,6 @@ public:
         int x_size = Game::n, int y_size = Game::n, int z_size = Game::n,
         bool inside = true, bool full = true
     );
-    bool cubes_collapsing;
-    bool **collapse_map;
     Sun *sun;
     Lamp *lamps[Lamp::num_max];
     int lamp_first, lamp_num;
@@ -216,6 +216,9 @@ public:
     Game(FILE *f);
     ~Game();
     void Store(FILE *f);
+    bool ContinueStart0();
+    bool ContinueStart1();
+    bool ContinueStart2();
     bool Starting();
     bool Evolving();
     void Finish();
@@ -223,7 +226,8 @@ public:
     void UpdateLights();
     void RefreshLight(int light);
     int CreateStock();
-    void DoCollapse();
+    void StartCollapse();
+    bool ContinueCollapse();
     void UseChangeStillCamera();
     void UsePlayerCamera();
     void ChangeGridLines();

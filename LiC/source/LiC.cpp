@@ -15,7 +15,8 @@ Sun::Sun(){
 
 Sun::Sun(FILE *f){
 
-    fscanf(f, "%d%d%d", &this->x, &this->y, &this->z); fgetc(f);
+    fscanf(f, "%d%d%d", &this->x, &this->y, &this->z);
+    fgetc(f);
 
 }
 
@@ -73,7 +74,8 @@ Lamp::Lamp(int x, int y, int z, int id){
 
 Lamp::Lamp(FILE *f, int id){
 
-    fscanf(f, "%d%d%d%d", &this->x, &this->y, &this->z, &this->age); fgetc(f);
+    fscanf(f, "%d%d%d%d", &this->x, &this->y, &this->z, &this->age);
+    fgetc(f);
     this->id = id;
 
 }
@@ -144,7 +146,8 @@ Cube::Cube(int x, int y, int z, FILE *f){
     this->x = x;
     this->y = y;
     this->z = z;
-    fscanf(f, "%d", &this->stock); fgetc(f);
+    fscanf(f, "%d", &this->stock);
+    fgetc(f);
 
 }
 
@@ -248,9 +251,7 @@ void Cube::Visualize(){
 Camera::Camera(float field_of_view){
 
     this->field_of_view = field_of_view;
-    this->zoom = 0;
-    this->horizontal_tilt = 0;
-    this->vertical_tilt = 0;
+    this->zoom = this->horizontal_tilt = this->vertical_tilt = 0;
 
 }
 
@@ -258,9 +259,7 @@ Camera::Camera(FILE *f){
 
     fscanf(f, "%f%d%d%d",
            &this->field_of_view,
-           &this->zoom,
-           &this->horizontal_tilt,
-           &this->vertical_tilt);
+           &this->zoom, &this->horizontal_tilt, &this->vertical_tilt);
     fgetc(f);
 
 }
@@ -269,9 +268,7 @@ void Camera::Store(FILE *f){
 
     fprintf(f, "%f %d %d %d\n",
             this->field_of_view,
-            this->zoom,
-            this->horizontal_tilt,
-            this->vertical_tilt);
+            this->zoom, this->horizontal_tilt, this->vertical_tilt);
 
 }
 
@@ -431,7 +428,8 @@ Camera(field_of_view){
 StillCamera::StillCamera(FILE *f) :
 Camera(f){
 
-    fscanf(f, "%d%d%d", &this->x, &this->y, &this->z); fgetc(f);
+    fscanf(f, "%d%d%d", &this->x, &this->y, &this->z);
+    fgetc(f);
 
 }
 
@@ -505,7 +503,7 @@ bool Player::Camera::Visualize(){
 
     Player::Camera::VisualizeFigurePOV();
 
-    if(this->player->Moving()){
+    if(this->player->Moving())
         if(this->player->simple_move == Player::ROTATE_RIGHT)
             glRotatef(this->player->simple_move_part * 90.0, 0.0, 1.0, 0.0);
         else if(this->player->simple_move == Player::ROTATE_LEFT)
@@ -518,7 +516,6 @@ bool Player::Camera::Visualize(){
             glTranslatef(0.0, 0.0, this->player->simple_move_part);
         else if(this->player->simple_move == Player::TRANSLATE_BACK)
             glTranslatef(0.0, 0.0, -this->player->simple_move_part);
-    }
 
     if(this->player->orientation == Player::Y_POS)
         gluLookAt(this->player->x + 0.5, this->player->z + 1.5, -(this->player->y + 0.5),
@@ -663,8 +660,7 @@ Player::Player(int x, int y, int z, Player::Orientation orientation){
     this->orientation = orientation;
     this->fall_channel = -1;
     this->move = Player::NO_MOVE;
-    this->lamps = 0;
-    this->cubes = 0;
+    this->lamps = this->cubes = 0;
     this->camera = new Player::Camera(90.0, this);
 
 }
@@ -673,8 +669,7 @@ Player::Player(FILE *f){
 
     fscanf(f, "%d%d%d%d%d%d",
            &this->x, &this->y, &this->z, &this->orientation,
-           &this->lamps,
-           &this->cubes);
+           &this->lamps, &this->cubes);
     fgetc(f);
     this->fall_channel = -1;
     this->move = Player::NO_MOVE;
@@ -693,8 +688,7 @@ void Player::Store(FILE *f){
 
     fprintf(f, "%d %d %d %d %d %d\n",
             this->x, this->y, this->z, this->orientation,
-            this->lamps,
-            this->cubes);
+            this->lamps, this->cubes);
     this->camera->Store(f);
 
 }
@@ -804,8 +798,10 @@ void Player::StopMove(){
 
 }
 
-void Player::ContinueMove(){
+bool Player::ContinueMove(){
 
+    if(!this->Moving()) return false;
+    cfg->display->PostRedisplay();
     int const time = ElapsedTime();
     int time_diff = time - this->simple_move_start;
     if(time_diff < 0){
@@ -816,8 +812,7 @@ void Player::ContinueMove(){
                               (this->simple_move < Player::TRANSLATE_UP ?
                                250.0 :
                                200.0));
-    cfg->display->PostRedisplay();
-    if(this->simple_move_part < 1.0) return;
+    if(this->simple_move_part < 1.0) return true;
 
     if(this->move == Player::FALL){
         this->z--;
@@ -841,7 +836,7 @@ void Player::ContinueMove(){
         this->move = Player::NO_MOVE;
     }
 
-    else if(this->move == Player::STEP_FRONT || this->move == Player::STEP_BACK){
+    else if(this->move == Player::STEP_FRONT || this->move == Player::STEP_BACK)
         if(this->simple_move == Player::TRANSLATE_UP){
             this->z++;
             this->simple_move = (this->move == Player::STEP_FRONT ?
@@ -877,7 +872,8 @@ void Player::ContinueMove(){
                 game->UpdateLights();
             }
         }
-    }
+
+    return this->Moving();
 
 }
 
@@ -1093,7 +1089,7 @@ void Player::Visualize(){
     else if(this->orientation == Player::Y_NEG) glRotatef(-180.0, 0.0, 1.0, 0.0);
     else if(this->orientation == Player::X_NEG) glRotatef(90.0, 0.0, 1.0, 0.0);
 
-    if(this->Moving()){
+    if(this->Moving())
         if(this->simple_move == Player::ROTATE_RIGHT)
             glRotatef(-this->simple_move_part * 90.0, 0.0, 1.0, 0.0);
         else if(this->simple_move == Player::ROTATE_LEFT)
@@ -1106,7 +1102,6 @@ void Player::Visualize(){
             glTranslatef(0.0, 0.0, -this->simple_move_part);
         else if(this->simple_move == Player::TRANSLATE_BACK)
             glTranslatef(0.0, 0.0, this->simple_move_part);
-    }
 
     Player::VisualizeFigure();
 
@@ -1189,44 +1184,38 @@ void Game::VisualizeGridLines(int x_start, int y_start, int z_start,
     glColor4f(0.0, 0.5, 0.0, 0.5);
     glBegin(GL_LINES);
     if(full){
-        for(x = x_start; x <= x_end; x += x_step){
+        for(x = x_start; x <= x_end; x += x_step)
             for(y = y_start; y <= y_end; y += y_step){
                 glVertex3f(x, 0.0, -y);
                 glVertex3f(x, Game::n, -y);
             }
-        }
-        for(y = y_start; y <= y_end; y += y_step){
+        for(y = y_start; y <= y_end; y += y_step)
             for(z = z_start; z <= z_end; z += z_step){
                 glVertex3f(0.0, z, -y);
                 glVertex3f(Game::n, z, -y);
             }
-        }
-        for(z = z_start; z <= z_end; z += z_step){
+        for(z = z_start; z <= z_end; z += z_step)
             for(x = x_start; x <= x_end; x += x_step){
                 glVertex3f(x, z, 0.0);
                 glVertex3f(x, z, -Game::n);
             }
-        }
     }
     else{
-        for(x = x_start; x <= x_end; x += x_step){
+        for(x = x_start; x <= x_end; x += x_step)
             for(y = y_start; y <= y_end; y += y_step){
                 glVertex3f(x, z_start, -y);
                 glVertex3f(x, z_end, -y);
             }
-        }
-        for(y = y_start; y <= y_end; y += y_step){
+        for(y = y_start; y <= y_end; y += y_step)
             for(z = z_start; z <= z_end; z += z_step){
                 glVertex3f(x_start, z, -y);
                 glVertex3f(x_end, z, -y);
             }
-        }
-        for(z = z_start; z <= z_end; z += z_step){
+        for(z = z_start; z <= z_end; z += z_step)
             for(x = x_start; x <= x_end; x += x_step){
                 glVertex3f(x, z, -y_start);
                 glVertex3f(x, z, -y_end);
             }
-        }
     }
     glEnd();
 
@@ -1401,8 +1390,7 @@ Game::Game(){
 
     this->sun = NULL;
 
-    this->lamp_first = 0;
-    this->lamp_num = 0;
+    this->lamp_first = this->lamp_num = 0;
 
     this->cubes_collapsing = false;
     this->collapse_map = new bool *[Game::n];
@@ -1432,19 +1420,26 @@ Game::Game(){
 
 Game::Game(FILE *f){
 
-    fscanf(f, "%d", &this->light); fgetc(f);
-    fscanf(f, "%d", &this->score); fgetc(f);
-    fscanf(f, "%d", &this->stage); fgetc(f);
+    fscanf(f, "%d", &this->light);
+    fgetc(f);
+    fscanf(f, "%d", &this->score);
+    fgetc(f);
+    fscanf(f, "%d", &this->stage);
+    fgetc(f);
 
     for(int i = 0; i < 5; i++){
-        fscanf(f, "%lf", this->stock_weight + i); fgetc(f);
+        fscanf(f, "%lf", this->stock_weight + i);
+        fgetc(f);
     }
     for(int i = 0; i < 5; i++){
-        fscanf(f, "%lf", this->stock_cum_prob + i); fgetc(f);
+        fscanf(f, "%lf", this->stock_cum_prob + i);
+        fgetc(f);
     }
 
-    fscanf(f, "%d", &this->grid_lines); fgetc(f);
-    fscanf(f, "%d", &this->grid_planes); fgetc(f);
+    fscanf(f, "%d", &this->grid_lines);
+    fgetc(f);
+    fscanf(f, "%d", &this->grid_planes);
+    fgetc(f);
 
     char c;
 
@@ -1455,7 +1450,8 @@ Game::Game(FILE *f){
     }
 
     this->lamp_first = 0;
-    fscanf(f, "%d", &this->lamp_num); fgetc(f);
+    fscanf(f, "%d", &this->lamp_num);
+    fgetc(f);
     for(int i = 0; i < this->lamp_num; i++) this->lamps[i] = new Lamp(f, i);
 
     this->cubes_collapsing = false;
@@ -1466,18 +1462,18 @@ Game::Game(FILE *f){
         this->cubes[x] = new Cube **[Game::n];
         for(int y = 0; y < Game::n; y++){
             this->cubes[x][y] = new Cube *[Game::n];
-            for(int z = 0; z < Game::n; z++){
+            for(int z = 0; z < Game::n; z++)
                 if((c = fgetc(f)) == '\n') this->cubes[x][y][z] = NULL;
                 else{
                     ungetc(c, f);
                     this->cubes[x][y][z] = new Cube(x, y, z, f);
                 }
-            }
         }
     }
 
     for(int i = 0; i < 4; i++) this->still_cameras[i] = new StillCamera(f);
-    fscanf(f, "%d", &this->still_camera); fgetc(f);
+    fscanf(f, "%d", &this->still_camera);
+    fgetc(f);
 
     this->player = new Player(f);
 
@@ -1486,7 +1482,8 @@ Game::Game(FILE *f){
                     (Camera *)this->still_cameras[this->still_camera]);
     fgetc(f);
 
-    this->finished = fgetc(f) - '0'; fgetc(f);
+    this->finished = fgetc(f) - '0';
+    fgetc(f);
 
 }
 
@@ -1552,6 +1549,41 @@ void Game::Store(FILE *f){
 
 }
 
+bool Game::ContinueStart0(){
+
+    if(!this->Starting()) return false;
+    for(int x = 0; x < Game::n; x++)
+        for(int y = 0; y < Game::n; y++)
+            this->cubes[x][y][0] = new Cube(x, y, 0, this->CreateStock());
+    delete this->cubes[Game::m][Game::m][0];
+    this->cubes[Game::m][Game::m][0] = new Cube(Game::m, Game::m, 0, 0);
+    cfg->effect_player->Play(Game::NEUTRAL);
+    cfg->display->PostRedisplay();
+    return true;
+
+}
+
+bool Game::ContinueStart1(){
+
+    if(!this->Starting()) return false;
+    this->player = new Player(Game::m, Game::m, 1, Player::Y_POS);
+    cfg->effect_player->Play(Game::NEUTRAL);
+    cfg->display->PostRedisplay();
+    return true;
+
+}
+
+bool Game::ContinueStart2(){
+
+    if(!this->Starting()) return false;
+    this->camera = this->player->camera;
+    this->UpdateScore(Game::START);
+    cfg->effect_player->Play(Game::NEUTRAL);
+    cfg->display->PostRedisplay();
+    return true;
+
+}
+
 bool Game::Starting(){
 
     return this->stage == 0;
@@ -1577,11 +1609,11 @@ void Game::Finish(){
 void Game::UpdateScore(Game::Event event){
 
     if(event == Game::START) this->score += 100;
-    else if(event == Game::POSITION_RESET) this->score -= 200;
+    else if(event == Game::POSITION_RESET) this->score -= 100;
     else if(event == Game::COLLISION) this->score -= 100;
     else if(event == Game::CUBE_CREATED) this->score += 10;
     else if(event == Game::CUBE_OBTAINED) this->score -= 10;
-    else if(event == Game::COLUMN_DESTROYED) this->score += 20;
+    else if(event == Game::COLUMN_DESTROYED) this->score += 10;
     else if(event == Game::PLAYER_FALLING) this->score -= 10;
     else if(event == Game::CUBES_COLLAPSING) this->score += 1;
 
@@ -1628,22 +1660,54 @@ void Game::RefreshLight(int light){
 
 int Game::CreateStock(){
 
-    float const p = (float)rand() / (RAND_MAX + 1);
+    double const p = rand() / (RAND_MAX + 1.0);
     int i;
     for(i = 0; this->stock_cum_prob[i] <= p; i++);
     return i;
 
 }
 
-void Game::DoCollapse(){
+void Game::StartCollapse(){
 
     if(this->Evolving() || this->finished) return;
-    SetTimer(CollapseTimerFunction);
-    Game::collapse_timers++;
     this->cubes_collapsing = true;
     for(int x = 0; x < Game::n; x++)
         for(int y = 0; y < Game::n; y++)
             this->collapse_map[x][y] = this->cubes[x][y][0] == NULL;
+    SetTimer(CollapseTimerFunction);
+    Game::collapse_timers++;
+
+}
+
+bool Game::ContinueCollapse(){
+
+    if(!this->cubes_collapsing) return false;
+    this->cubes_collapsing = false;
+    for(int x = 0; x < Game::n; x++)
+        for(int y = 0; y < Game::n; y++){
+            if(this->cubes[x][y][0] != NULL &&
+               this->collapse_map[x][y]){
+                if(!this->cubes_collapsing) this->cubes_collapsing = true;
+                delete this->cubes[x][y][0];
+                this->cubes[x][y][0] = NULL;
+                this->UpdateScore(Game::CUBES_COLLAPSING);
+            }
+            for(int z = 1; z < Game::n; z++)
+                if(this->cubes[x][y][z] != NULL &&
+                   this->cubes[x][y][z - 1] == NULL){
+                    if(!this->cubes_collapsing) this->cubes_collapsing = true;
+                    this->cubes[x][y][z - 1] = this->cubes[x][y][z];
+                    this->cubes[x][y][z]->Move(x, y, z - 1);
+                    this->cubes[x][y][z] = NULL;
+                    this->UpdateScore(Game::CUBES_COLLAPSING);
+                }
+        }
+    this->player->Fall();
+    if(!this->cubes_collapsing) return false;
+    this->player->HandleCollision();
+    cfg->effect_player->Play(Game::CUBES_COLLAPSING);
+    cfg->display->PostRedisplay();
+    return true;
 
 }
 
@@ -1726,7 +1790,7 @@ void Game::VisualizeWalls(){
     int x, y, z;
     //back
     glNormal3f(0.0, 0.0, -1.0);
-    for(z = 0; z < Game::n; z++){
+    for(z = 0; z < Game::n; z++)
         for(x = 0; x < Game::n; x++, bright = !bright){
             if(this->cubes[x][0][z] != NULL) continue;
             glColor4f(bright ? 0.25 : 0.2, bright ? 0.25 : 0.2, 1.0, 0.95);
@@ -1735,10 +1799,9 @@ void Game::VisualizeWalls(){
             glVertex3f(x + 1.0, z + 1.0, 0.0);
             glVertex3f(x + 1.0, z, 0.0);
         }
-    }
     //left
     glNormal3f(1.0, 0.0, 0.0);
-    for(z = 0; z < Game::n; z++){
+    for(z = 0; z < Game::n; z++)
         for(y = 0; y < Game::n; y++, bright = !bright){
             if(this->cubes[0][y][z] != NULL) continue;
             glColor4f(bright ? 0.25 : 0.2, bright ? 0.25 : 0.2, 1.0, 0.95);
@@ -1747,10 +1810,9 @@ void Game::VisualizeWalls(){
             glVertex3f(0.0, z + 1.0, -(y + 1.0));
             glVertex3f(0.0, z + 1.0, -y);
         }
-    }
     //front
     glNormal3f(0.0, 0.0, 1.0);
-    for(z = 0; z < Game::n; z++){
+    for(z = 0; z < Game::n; z++)
         for(x = 0; x < Game::n; x++, bright = !bright){
             if(this->cubes[x][Game::n - 1][z] != NULL) continue;
             glColor4f(bright ? 0.25 : 0.2, bright ? 0.25 : 0.2, 1.0, 0.95);
@@ -1759,10 +1821,9 @@ void Game::VisualizeWalls(){
             glVertex3f(x + 1.0, z + 1.0, -Game::n);
             glVertex3f(x, z + 1.0, -Game::n);
         }
-    }
     //right
     glNormal3f(-1.0, 0.0, 0.0);
-    for(z = 0; z < Game::n; z++){
+    for(z = 0; z < Game::n; z++)
         for(y = 0; y < Game::n; y++, bright = !bright){
             if(this->cubes[Game::n - 1][y][z] != NULL) continue;
             glColor4f(bright ? 0.25 : 0.2, bright ? 0.25 : 0.2, 1.0, 0.95);
@@ -1771,7 +1832,6 @@ void Game::VisualizeWalls(){
             glVertex3f(Game::n, z + 1.0, -(y + 1.0));
             glVertex3f(Game::n, z, -(y + 1.0));
         }
-    }
     glEnd();
     glDisable(GL_BLEND);
 
@@ -1832,10 +1892,10 @@ void Display::Initialize(){
 
     char *(*const GetExtensionsString)() =
         (char *(*)())glutGetProcAddress("wglGetExtensionsStringEXT");
-    if(GetExtensionsString != NULL){
+    if(GetExtensionsString != NULL)
         for(char *ext = strtok(GetExtensionsString(), " ");
             ext != NULL && !Display::avsync_possible;
-            ext = strtok(NULL, " ")){
+            ext = strtok(NULL, " "))
             if(strcmp(ext, "WGL_EXT_swap_control_tear") == 0){
                 if(Display::SetSwapInterval == NULL)
                     Display::SetSwapInterval =
@@ -1845,8 +1905,6 @@ void Display::Initialize(){
             else if(strcmp(ext, "WGL_EXT_swap_control") == 0)
                 Display::SetSwapInterval =
                     (int (*)(int))glutGetProcAddress("wglSwapIntervalEXT");
-        }
-    }
 
     SDL_GL_DeleteContext(c);
     SDL_DestroyWindow(w);
@@ -1864,7 +1922,8 @@ Display::Display(){
 
 Display::Display(FILE *f){
 
-    fscanf(f, "%d", &this->rendering); fgetc(f);
+    fscanf(f, "%d", &this->rendering);
+    fgetc(f);
     this->id = -1;
     this->showing = false;
 
@@ -2001,8 +2060,7 @@ void Window::Initialize(){
 Window::Window() :
 Display(){
 
-    this->x = 0;
-    this->y = 0;
+    this->x = this->y = 0;
     this->width = glutGet(GLUT_SCREEN_WIDTH) * 15 / 16;
     this->height = glutGet(GLUT_SCREEN_HEIGHT) * 15 / 16;
     this->border_width = glutGet(GLUT_WINDOW_BORDER_WIDTH);
@@ -2019,10 +2077,8 @@ Display(){
 Window::Window(FILE *f) :
 Display(f){
 
-    fscanf(f, "%d", &this->x); fgetc(f);
-    fscanf(f, "%d", &this->y); fgetc(f);
-    fscanf(f, "%d", &this->width); fgetc(f);
-    fscanf(f, "%d", &this->height); fgetc(f);
+    fscanf(f, "%d%d%d%d", &this->x, &this->y, &this->width, &this->height);
+    fgetc(f);
     this->border_width = glutGet(GLUT_WINDOW_BORDER_WIDTH);
     this->border_height = glutGet(GLUT_WINDOW_BORDER_HEIGHT);
     this->damaged = this->repair_scheduled = false;
@@ -2032,10 +2088,7 @@ Display(f){
 void Window::Store(FILE *f){
 
     this->Display::Store(f);
-    fprintf(f, "%d\n", this->x);
-    fprintf(f, "%d\n", this->y);
-    fprintf(f, "%d\n", this->width);
-    fprintf(f, "%d\n", this->height);
+    fprintf(f, "%d %d %d %d\n", this->x, this->y, this->width, this->height);
 
 }
 
@@ -2181,9 +2234,9 @@ bool AutoHidable::MakeInvisible(){
 
 void AutoHidable::IncreaseTimers(){
 
+    this->MakeVisible();
     SetTimer(this->TimerFunction, 2000);
     this->timers++;
-    this->MakeVisible();
 
 }
 
@@ -2227,15 +2280,16 @@ AutoHidable(TimerFunction){
 SoundPlayer::SoundPlayer(FILE *f, void (*TimerFunction)(int)) :
 AutoHidable(TimerFunction){
 
-    this->active = fgetc(f) - '0'; fgetc(f);
-    fscanf(f, "%d", &this->volume); fgetc(f);
+    this->active = fgetc(f) - '0';
+    fgetc(f);
+    fscanf(f, "%d", &this->volume);
+    fgetc(f);
 
 }
 
 void SoundPlayer::Store(FILE *f){
 
-    fprintf(f, "%d\n", this->active);
-    fprintf(f, "%d\n", this->volume);
+    fprintf(f, "%d %d\n", this->active, this->volume);
 
 }
 
@@ -2568,6 +2622,7 @@ AutoHidable(TimerFunction){
     int const width = glutGet(GLUT_SCREEN_WIDTH);
     if(this->tolerance > width) this->tolerance = width;
     this->tolerance /= 300;
+    if(this->tolerance < 1) this->tolerance = 1;
     this->x = this->y = -1;
     this->x_ = this->y_ = 0;
 
@@ -2576,8 +2631,10 @@ AutoHidable(TimerFunction){
 Pointer::Pointer(FILE *f, void (*TimerFunction)(int)) :
 AutoHidable(TimerFunction){
 
-    this->active = fgetc(f) - '0'; fgetc(f);
-    fscanf(f, "%d", &this->tolerance); fgetc(f);
+    this->active = fgetc(f) - '0';
+    fgetc(f);
+    fscanf(f, "%d", &this->tolerance);
+    fgetc(f);
     this->x = this->y = -1;
     this->x_ = this->y_ = 0;
 
@@ -2585,8 +2642,7 @@ AutoHidable(TimerFunction){
 
 void Pointer::Store(FILE *f){
 
-    fprintf(f, "%d\n", this->active);
-    fprintf(f, "%d\n", this->tolerance);
+    fprintf(f, "%d %d\n", this->active, this->tolerance);
 
 }
 
@@ -2695,6 +2751,7 @@ bool Pointer::ResetTolerance(){
     int const width = glutGet(GLUT_SCREEN_WIDTH);
     if(def > width) def = width;
     def /= 300;
+    if(def < 1) def = 1;
     if(this->tolerance == def) return false;
     this->tolerance = def;
     if(this->active && this->Positioned()){
@@ -2825,8 +2882,7 @@ GameIO::GameIO(){
 
     this->filename = new char[FILENAME_MAX - strlen(storage_folder) + 1];
     this->filename[0] = '\0';
-    this->length = 0;
-    this->cursor = this->visible_start = 0;
+    this->length = this->cursor = this->visible_start = 0;
 
 }
 
@@ -2991,8 +3047,7 @@ void Configuration::Terminate(){
 
 Configuration::Configuration(){
 
-    this->game_info = true;
-    this->player_info = true;
+    this->game_info = this->player_info = true;
     this->display = this->window = new Window();
     this->full_screen = new FullScreen();
     this->adjustment = this->music_player = new MusicPlayer(MusicPlayerTimerFunction);
@@ -3008,11 +3063,14 @@ Configuration::Configuration(){
 Configuration::Configuration(FILE *f){
 
     int option;
-    this->game_info = fgetc(f) - '0'; fgetc(f);
-    this->player_info = fgetc(f) - '0'; fgetc(f);
+    this->game_info = fgetc(f) - '0';
+    fgetc(f);
+    this->player_info = fgetc(f) - '0';
+    fgetc(f);
     this->window = new Window(f);
     this->full_screen = new FullScreen(f);
-    fscanf(f, "%d", &option); fgetc(f);
+    fscanf(f, "%d", &option);
+    fgetc(f);
     if(option == 0) this->display = this->window;
     else if(option == 1) this->display = this->full_screen;
     this->music_player = new MusicPlayer(f, MusicPlayerTimerFunction);
@@ -3021,7 +3079,8 @@ Configuration::Configuration(FILE *f){
     this->zoom = new Zoom();
     this->horizontal_tilt = new HorizontalTilt();
     this->vertical_tilt = new VerticalTilt();
-    fscanf(f, "%d", &option); fgetc(f);
+    fscanf(f, "%d", &option);
+    fgetc(f);
     if(option == 0) this->adjustment = this->music_player;
     else if(option == 1) this->adjustment = this->effect_player;
     else if(option == 2) this->adjustment = this->pointer;
@@ -3250,13 +3309,13 @@ void Terminate(){
 
 void StartGame(){
 
-    SetTimer(Start0TimerFunction, 666);
-    Game::start_timers++;
     delete game;
     game = new Game();
     cfg->music_player->Play();
     cfg->effect_player->Play(Game::NEUTRAL);
     cfg->display->PostRedisplay();
+    SetTimer(Start0TimerFunction, 666);
+    Game::start_timers++;
 
 }
 
@@ -3273,7 +3332,8 @@ bool LoadGame(char const *filename){
     if(f == NULL) return false;
     float a, d, r;
     int m;
-    fscanf(f, "%f%f%f%d", &a, &d, &r, &m); fgetc(f);
+    fscanf(f, "%f%f%f%d", &a, &d, &r, &m);
+    fgetc(f);
     if(a != Game::a || d != Game::d || r != Game::r || m != Game::m){
         fclose(f);
         return false;
@@ -3300,8 +3360,8 @@ bool StoreGame(char const *filename){
                                  filename),
                           "w");
     if(f == NULL) return false;
-    SetTimer(StoreTimerFunction, 100);
     cfg->effect_player->Play(Game::NEUTRAL);
+    SetTimer(StoreTimerFunction, 100);
     fprintf(f, "%f %f %f %d\n", Game::a, Game::d, Game::r, Game::m);
     game->Store(f);
     fclose(f);
@@ -3324,13 +3384,6 @@ void ActivateAnimation(){
 void SetTimer(void (*TimerFunction)(int), int time){
 
     glutTimerFunc(time, TimerFunction, 0);
-
-}
-
-void WindowRepairDisplayFunction(){
-
-    cfg->window->showing = false;
-    cfg->window->Repair();
 
 }
 
@@ -3426,7 +3479,7 @@ void MainKeyboardFunction(unsigned char key, int x, int y){
         key = tolower(key);
         if(key == 'x') game->player->DestroyColumn();
         else if(key == 'd') game->player->DestroyCube();
-        else if(key == 'c') game->DoCollapse();
+        else if(key == 'c') game->StartCollapse();
         else if(key == 'f') game->player->PushCube();
         else if(key == 'n') StartGame();
         else if(key == 'm')
@@ -3554,9 +3607,8 @@ void ActivePassiveMotionFunction(int x, int y){
 
 void IdleFunction(){
 
-    if(game->player != NULL && game->player->Moving())
-        game->player->ContinueMove();
-    else glutIdleFunc(NULL);
+    if(game->player == NULL || !game->player->ContinueMove())
+        glutIdleFunc(NULL);
 
 }
 
@@ -3603,75 +3655,34 @@ void StoreTimerFunction(int _){
 void Start0TimerFunction(int _){
 
     Game::start_timers--;
-    if(Game::start_timers > 0 || !game->Starting()) return;
+    if(Game::start_timers > 0 || !game->ContinueStart0()) return;
     SetTimer(Start1TimerFunction, 666);
     Game::start_timers++;
-    for(int x = 0; x < Game::n; x++)
-        for(int y = 0; y < Game::n; y++)
-            game->cubes[x][y][0] = new Cube(x, y, 0, game->CreateStock());
-    delete game->cubes[Game::m][Game::m][0];
-    game->cubes[Game::m][Game::m][0] = new Cube(Game::m, Game::m, 0, 0);
-    cfg->effect_player->Play(Game::NEUTRAL);
-    cfg->display->PostRedisplay();
 
 }
 
 void Start1TimerFunction(int _){
 
     Game::start_timers--;
-    if(Game::start_timers > 0 || !game->Starting()) return;
+    if(Game::start_timers > 0 || !game->ContinueStart1()) return;
     SetTimer(Start2TimerFunction, 666);
     Game::start_timers++;
-    game->player = new Player(Game::m, Game::m, 1, Player::Y_POS);
-    cfg->effect_player->Play(Game::NEUTRAL);
-    cfg->display->PostRedisplay();
 
 }
 
 void Start2TimerFunction(int _){
 
     Game::start_timers--;
-    if(Game::start_timers > 0 || !game->Starting()) return;
-    game->camera = game->player->camera;
-    game->UpdateScore(Game::START);
-    cfg->effect_player->Play(Game::NEUTRAL);
-    cfg->display->PostRedisplay();
+    if(Game::start_timers > 0 || !game->ContinueStart2()) return;
 
 }
 
 void CollapseTimerFunction(int _){
 
     Game::collapse_timers--;
-    if(Game::collapse_timers > 0 || !game->cubes_collapsing) return;
-    game->cubes_collapsing = false;
-    for(int x = 0; x < Game::n; x++){
-        for(int y = 0; y < Game::n; y++){
-            if(game->cubes[x][y][0] != NULL &&
-               game->collapse_map[x][y]){
-                if(!game->cubes_collapsing) game->cubes_collapsing = true;
-                delete game->cubes[x][y][0];
-                game->cubes[x][y][0] = NULL;
-                game->UpdateScore(Game::CUBES_COLLAPSING);
-            }
-            for(int z = 1; z < Game::n; z++){
-                if(game->cubes[x][y][z] != NULL &&
-                   game->cubes[x][y][z - 1] == NULL){
-                    if(!game->cubes_collapsing) game->cubes_collapsing = true;
-                    game->cubes[x][y][z - 1] = game->cubes[x][y][z];
-                    game->cubes[x][y][z]->Move(x, y, z - 1);
-                    game->cubes[x][y][z] = NULL;
-                    game->UpdateScore(Game::CUBES_COLLAPSING);
-                }
-            }
-        }
-    }
-    game->player->Fall();
-    if(!game->cubes_collapsing) return;
+    if(Game::collapse_timers > 0 || !game->ContinueCollapse()) return;
     SetTimer(CollapseTimerFunction, 250);
     Game::collapse_timers++;
-    game->player->HandleCollision();
-    cfg->effect_player->Play(Game::CUBES_COLLAPSING);
-    cfg->display->PostRedisplay();
 
 }
 
