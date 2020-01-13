@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <climits>
+#include <cfloat>
 #include <ctime>
 #include <cmath>
 #include <cstdlib>
@@ -191,7 +192,7 @@ public:
     enum Event{START, POSITION_RESET, COLLISION, CUBE_CREATED, CUBE_OBTAINED,
                COLUMN_DESTROYED, PLAYER_FALLING, CUBES_COLLAPSING, NEUTRAL};
     static int start_timers, collapse_timers;
-    static float a, d, r, w[5];
+    static double a, d, r, w[5];
     static int m, n;
     static void Initialize(time_t time, int argc, char **argv);
     static bool Inside(int x, int y, int z);

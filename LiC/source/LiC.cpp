@@ -266,8 +266,8 @@ Camera::Camera(FILE *f){
 
 void Camera::Store(FILE *f){
 
-    fprintf(f, "%f %d %d %d\n",
-            this->field_of_view,
+    fprintf(f, "%.*f %d %d %d\n",
+            FLT_DIG, this->field_of_view,
             this->zoom, this->horizontal_tilt, this->vertical_tilt);
 
 }
@@ -314,20 +314,24 @@ bool Camera::ResetHorizontalTilt(){
 
 bool Camera::IncreaseHorizontalTilt(){
 
-    if(game->Starting() || game->finished ||
-       this->horizontal_tilt == 75)
+    if(game->Starting() || game->finished) return false;
+    int const horizontal_tilt = this->horizontal_tilt + 1;
+    if(horizontal_tilt * horizontal_tilt +
+       this->vertical_tilt * this->vertical_tilt > 5625)
         return false;
-    this->horizontal_tilt++;
+    this->horizontal_tilt = horizontal_tilt;
     return true;
 
 }
 
 bool Camera::DecreaseHorizontalTilt(){
 
-    if(game->Starting() || game->finished ||
-       this->horizontal_tilt == -75)
+    if(game->Starting() || game->finished) return false;
+    int const horizontal_tilt = this->horizontal_tilt - 1;
+    if(horizontal_tilt * horizontal_tilt +
+       this->vertical_tilt * this->vertical_tilt > 5625)
         return false;
-    this->horizontal_tilt--;
+    this->horizontal_tilt = horizontal_tilt;
     return true;
 
 }
@@ -344,69 +348,67 @@ bool Camera::ResetVerticalTilt(){
 
 bool Camera::IncreaseVerticalTilt(){
 
-    if(game->Starting() || game->finished ||
-       this->vertical_tilt == 75)
+    if(game->Starting() || game->finished) return false;
+    int const vertical_tilt = this->vertical_tilt + 1;
+    if(this->horizontal_tilt * this->horizontal_tilt +
+       vertical_tilt * vertical_tilt > 5625)
         return false;
-    this->vertical_tilt++;
+    this->vertical_tilt = vertical_tilt;
     return true;
 
 }
 
 bool Camera::DecreaseVerticalTilt(){
 
-    if(game->Starting() || game->finished ||
-       this->vertical_tilt == -75)
+    if(game->Starting() || game->finished) return false;
+    int const vertical_tilt = this->vertical_tilt - 1;
+    if(this->horizontal_tilt * this->horizontal_tilt +
+       vertical_tilt * vertical_tilt > 5625)
         return false;
-    this->vertical_tilt--;
+    this->vertical_tilt = vertical_tilt;
     return true;
 
 }
 
 void Camera::VisualizeTiltFrame(){
 
-    int const x = cfg->pointer->x, y = cfg->display->height - cfg->pointer->y;
-    int const step = cfg->pointer->Tolerance();
     glEnable(GL_BLEND);
+    glPushMatrix();
+    glTranslatef(cfg->pointer->x -
+                 this->horizontal_tilt * cfg->pointer->Tolerance(),
+                 cfg->display->height - cfg->pointer->y -
+                 this->vertical_tilt * cfg->pointer->Tolerance(),
+                 0.0);
+    glColor4f(0.0, 0.0, 0.0, 0.0);
+    glutSolidCylinder(75.0 * cfg->pointer->Tolerance(), 0.0,
+                      50 * cfg->pointer->Tolerance(), 1);
     glColor4f(0.5, 0.5, 0.5, 0.25);
-    //left
-    glRecti(x - (75 + this->horizontal_tilt + 1) * step,
-            y - (75 + this->vertical_tilt + 1) * step,
-            x - (75 + this->horizontal_tilt) * step,
-            y + (75 - this->vertical_tilt + 1) * step);
-    //right
-    glRecti(x + (75 - this->horizontal_tilt) * step,
-            y - (75 + this->vertical_tilt + 1) * step,
-            x + (75 - this->horizontal_tilt + 1) * step,
-            y + (75 - this->vertical_tilt + 1) * step);
-    //bottom
-    glRecti(x - (75 + this->horizontal_tilt) * step,
-            y - (75 + this->vertical_tilt + 1) * step,
-            x + (75 - this->horizontal_tilt) * step,
-            y - (75 + this->vertical_tilt) * step);
-    //top
-    glRecti(x - (75 + this->horizontal_tilt) * step,
-            y + (75 - this->vertical_tilt) * step,
-            x + (75 - this->horizontal_tilt) * step,
-            y + (75 - this->vertical_tilt + 1) * step);
+    glutSolidCylinder(76.0 * cfg->pointer->Tolerance(), 0.0,
+                      50 * cfg->pointer->Tolerance(), 1);
+    glPopMatrix();
     glDisable(GL_BLEND);
 
 }
 
 bool Camera::Visualize(){
 
-    static float const zoom_base = pow(6.0, -1.0 / 30.0);
+    static float const zoom_step = pow(6.0, 1.0 / 30.0);
     static float const dist_max = 3.0 * Game::n * sqrt(3.0);
+    static float const tilt_sq_rad = pow(75.0 / sin(acos(-1.0) / 4.0), 2.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(this->field_of_view * pow(zoom_base, this->zoom),
+    gluPerspective(this->field_of_view / pow(zoom_step, this->zoom),
                    (float)cfg->display->width / cfg->display->height,
                    0.01, dist_max);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glTranslatef(0.0, 0.0, 0.05);
     gluLookAt(0.0, 0.0, 0.0,
-              this->horizontal_tilt, this->vertical_tilt, -75.0,
+              this->horizontal_tilt, this->vertical_tilt,
+              -sqrt(tilt_sq_rad -
+                    this->horizontal_tilt * this->horizontal_tilt -
+                    this->vertical_tilt * this->vertical_tilt),
               0.0, 1.0, 0.0);
     return true;
 
@@ -1114,7 +1116,7 @@ void Player::Visualize(){
 
 
 int Game::start_timers, Game::collapse_timers;
-float Game::a, Game::d, Game::r, Game::w[5];
+double Game::a, Game::d, Game::r, Game::w[5];
 int Game::m, Game::n;
 
 void Game::Initialize(time_t time, int argc, char **argv){
@@ -1122,7 +1124,7 @@ void Game::Initialize(time_t time, int argc, char **argv){
     srand(time);
     Player::Initialize(localtime(&time)->tm_yday == 0);
     Game::start_timers = Game::collapse_timers = 0;
-    float x;
+    double x;
     int i, j;
     Game::a = 1.0;
     Game::d = 0.15;
@@ -1144,7 +1146,7 @@ void Game::Initialize(time_t time, int argc, char **argv){
                                          argv[i] + 2),
                                   "r");
             if(f != NULL){
-                fscanf(f, "%f%f%f%d", &Game::a, &Game::d, &Game::r, &Game::m);
+                fscanf(f, "%lf%lf%lf%d", &Game::a, &Game::d, &Game::r, &Game::m);
                 fclose(f);
             }
         }
@@ -1518,9 +1520,9 @@ void Game::Store(FILE *f){
     fprintf(f, "%d\n", this->stage);
 
     for(int i = 0; i < 5; i++)
-        fprintf(f, "%.10f\n", this->stock_weight[i]);
+        fprintf(f, "%.*f\n", DBL_DIG, this->stock_weight[i]);
     for(int i = 0; i < 5; i++)
-        fprintf(f, "%.10f\n", this->stock_cum_prob[i]);
+        fprintf(f, "%.*f\n", DBL_DIG, this->stock_cum_prob[i]);
 
     fprintf(f, "%d\n", this->grid_lines);
     fprintf(f, "%d\n", this->grid_planes);
@@ -3330,9 +3332,9 @@ bool LoadGame(char const *filename){
                                  filename),
                           "r");
     if(f == NULL) return false;
-    float a, d, r;
+    double a, d, r;
     int m;
-    fscanf(f, "%f%f%f%d", &a, &d, &r, &m);
+    fscanf(f, "%lf%lf%lf%d", &a, &d, &r, &m);
     fgetc(f);
     if(a != Game::a || d != Game::d || r != Game::r || m != Game::m){
         fclose(f);
@@ -3362,7 +3364,8 @@ bool StoreGame(char const *filename){
     if(f == NULL) return false;
     cfg->effect_player->Play(Game::NEUTRAL);
     SetTimer(StoreTimerFunction, 100);
-    fprintf(f, "%f %f %f %d\n", Game::a, Game::d, Game::r, Game::m);
+    fprintf(f, "%.*f %.*f %.*f %d\n",
+            DBL_DIG, Game::a, DBL_DIG, Game::d, DBL_DIG, Game::r, Game::m);
     game->Store(f);
     fclose(f);
     return true;
