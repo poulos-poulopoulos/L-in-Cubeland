@@ -105,7 +105,7 @@ Section /o uninstaller
     WriteRegStr HKLM SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\LiC UninstallString $INSTDIR\LiC\executable\LiC-uninstaller.exe
     WriteRegStr HKLM SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\LiC DisplayIcon $INSTDIR\LiC\executable\LiC.exe
     WriteRegStr HKLM SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\LiC DisplayName $(^Name)
-    WriteRegStr HKLM SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\LiC DisplayVersion 0.2.12
+    WriteRegStr HKLM SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\LiC DisplayVersion 0.2.16
     WriteRegStr HKLM SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\LiC Publisher "poulos poulopoulos"
     WriteRegDWORD HKLM SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\LiC NoModify 1
     WriteRegDWORD HKLM SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\LiC NoRepair 1

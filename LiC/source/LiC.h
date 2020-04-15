@@ -187,6 +187,7 @@ private:
     int still_camera;
     bool cubes_collapsing;
     bool **collapse_map;
+    void Finish();
     void VisualizeWalls();
 public:
     enum Event{START, POSITION_RESET, COLLISION, CUBE_CREATED, CUBE_OBTAINED,
@@ -212,7 +213,6 @@ public:
     Cube ****cubes;
     Player *player;
     Camera *camera;
-    bool finished;
     Game();
     Game(FILE *f);
     ~Game();
@@ -222,7 +222,7 @@ public:
     bool ContinueStart2();
     bool Starting();
     bool Evolving();
-    void Finish();
+    bool Finished();
     void UpdateScore(Game::Event event);
     void UpdateLights();
     void RefreshLight(int light);

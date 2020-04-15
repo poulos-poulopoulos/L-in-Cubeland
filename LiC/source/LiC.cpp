@@ -274,9 +274,7 @@ void Camera::Store(FILE *f){
 
 bool Camera::ResetZoom(){
 
-    if(game->Starting() || game->finished ||
-       this->zoom == 0)
-        return false;
+    if(this->zoom == 0) return false;
     this->zoom = 0;
     return true;
 
@@ -284,9 +282,7 @@ bool Camera::ResetZoom(){
 
 bool Camera::IncreaseZoom(){
 
-    if(game->Starting() || game->finished ||
-       this->zoom == 30)
-        return false;
+    if(this->zoom == 30) return false;
     this->zoom++;
     return true;
 
@@ -294,9 +290,7 @@ bool Camera::IncreaseZoom(){
 
 bool Camera::DecreaseZoom(){
 
-    if(game->Starting() || game->finished ||
-       this->zoom == 0)
-        return false;
+    if(this->zoom == 0) return false;
     this->zoom--;
     return true;
 
@@ -304,9 +298,7 @@ bool Camera::DecreaseZoom(){
 
 bool Camera::ResetHorizontalTilt(){
 
-    if(game->Starting() || game->finished ||
-       this->horizontal_tilt == 0)
-        return false;
+    if(this->horizontal_tilt == 0) return false;
     this->horizontal_tilt = 0;
     return true;
 
@@ -314,7 +306,6 @@ bool Camera::ResetHorizontalTilt(){
 
 bool Camera::IncreaseHorizontalTilt(){
 
-    if(game->Starting() || game->finished) return false;
     int const horizontal_tilt = this->horizontal_tilt + 1;
     if(horizontal_tilt * horizontal_tilt +
        this->vertical_tilt * this->vertical_tilt > 5625)
@@ -326,7 +317,6 @@ bool Camera::IncreaseHorizontalTilt(){
 
 bool Camera::DecreaseHorizontalTilt(){
 
-    if(game->Starting() || game->finished) return false;
     int const horizontal_tilt = this->horizontal_tilt - 1;
     if(horizontal_tilt * horizontal_tilt +
        this->vertical_tilt * this->vertical_tilt > 5625)
@@ -338,9 +328,7 @@ bool Camera::DecreaseHorizontalTilt(){
 
 bool Camera::ResetVerticalTilt(){
 
-    if(game->Starting() || game->finished ||
-       this->vertical_tilt == 0)
-        return false;
+    if(this->vertical_tilt == 0) return false;
     this->vertical_tilt = 0;
     return true;
 
@@ -348,7 +336,6 @@ bool Camera::ResetVerticalTilt(){
 
 bool Camera::IncreaseVerticalTilt(){
 
-    if(game->Starting() || game->finished) return false;
     int const vertical_tilt = this->vertical_tilt + 1;
     if(this->horizontal_tilt * this->horizontal_tilt +
        vertical_tilt * vertical_tilt > 5625)
@@ -360,7 +347,6 @@ bool Camera::IncreaseVerticalTilt(){
 
 bool Camera::DecreaseVerticalTilt(){
 
-    if(game->Starting() || game->finished) return false;
     int const vertical_tilt = this->vertical_tilt - 1;
     if(this->horizontal_tilt * this->horizontal_tilt +
        vertical_tilt * vertical_tilt > 5625)
@@ -711,24 +697,28 @@ void Player::ResetPosition(){
 
     game->UpdateScore(Game::POSITION_RESET);
     cfg->effect_player->Play(Game::POSITION_RESET);
+    this->x = this->y = Game::m;
     int z;
     for(z = 1;
         z < Game::n - 1 &&
         (game->cubes[Game::m][Game::m][z] != NULL ||
          game->cubes[Game::m][Game::m][z + 1] != NULL);
-        z++);
-    if(z == Game::n - 1){
-        game->Finish();
+        this->z = z, z += 1 + (game->cubes[Game::m][Game::m][z] == NULL));
+    if(z < Game::n - 1){
+        this->z = z;
         return;
     }
-    this->x = this->y = Game::m;
-    this->z = z;
+    for(z = this->z; z <= this->z + 1; z++){
+        if(game->cubes[Game::m][Game::m][z] == NULL) continue;
+        delete game->cubes[Game::m][Game::m][z];
+        game->cubes[Game::m][Game::m][z] = NULL;
+    }
 
 }
 
 void Player::StartMove(Player::Move move){
 
-    if(game->Evolving() || game->finished) return;
+    if(game->Evolving() || game->Finished()) return;
 
     if(move == Player::FALL){
         if(game->cubes[this->x][this->y][this->z - 1] != NULL) return;
@@ -911,7 +901,7 @@ void Player::StepBack(){
 
 void Player::CreateLamp(){
 
-    if(game->Evolving() || game->finished ||
+    if(game->Evolving() || game->Finished() ||
        game->lamp_num == Lamp::num_max || this->lamps == 0)
         return;
     int x, y, z;
@@ -929,7 +919,7 @@ void Player::CreateLamp(){
 
 void Player::ObtainCube(){
 
-    if(game->Evolving() || game->finished ||
+    if(game->Evolving() || game->Finished() ||
        !game->cubes[this->x][this->y][this->z - 1]->DecreaseStock())
         return;
     this->cubes++;
@@ -941,7 +931,7 @@ void Player::ObtainCube(){
 
 void Player::CreateCube(){
 
-    if(game->Evolving() || game->finished ||
+    if(game->Evolving() || game->Finished() ||
        this->cubes == 0)
         return;
     int x, y, z;
@@ -961,7 +951,7 @@ void Player::CreateCube(){
 
 void Player::PushCube(){
 
-    if(game->Evolving() || game->finished) return;
+    if(game->Evolving() || game->Finished()) return;
     int x, y, z, l, i;
     Cube *c, *c_next;
     this->CalculateFrontBackPosition(&x, &y, &z, 1);
@@ -998,7 +988,7 @@ void Player::PushCube(){
 
 void Player::DestroyCube(){
 
-    if(game->Evolving() || game->finished) return;
+    if(game->Evolving() || game->Finished()) return;
     int x, y, z;
     this->CalculateFrontBackPosition(&x, &y, &z, 1);
     z++;
@@ -1016,7 +1006,7 @@ void Player::DestroyCube(){
 
 void Player::DestroyColumn(){
 
-    if(game->Evolving() || game->finished) return;
+    if(game->Evolving() || game->Finished()) return;
     int x, y, z;
     this->CalculateFrontBackPosition(&x, &y, &z, 1);
     if(!Game::Inside(x, y, z)) return;
@@ -1416,8 +1406,6 @@ Game::Game(){
 
     this->camera = this->still_cameras[this->still_camera];
 
-    this->finished = false;
-
 }
 
 Game::Game(FILE *f){
@@ -1484,9 +1472,6 @@ Game::Game(FILE *f){
                     (Camera *)this->still_cameras[this->still_camera]);
     fgetc(f);
 
-    this->finished = fgetc(f) - '0';
-    fgetc(f);
-
 }
 
 Game::~Game(){
@@ -1547,8 +1532,6 @@ void Game::Store(FILE *f){
 
     fprintf(f, "%d\n", this->camera == this->player->camera);
 
-    fprintf(f, "%d\n", this->finished);
-
 }
 
 bool Game::ContinueStart0(){
@@ -1598,11 +1581,15 @@ bool Game::Evolving(){
 
 }
 
+bool Game::Finished(){
+
+    return this->light < 0 && !this->Starting() || this->score < 0;
+
+}
+
 void Game::Finish(){
 
-    if(this->finished) return;
-    this->finished = true;
-    this->cubes_collapsing = false;
+    if(this->cubes_collapsing) this->cubes_collapsing = false;
     this->player->StopMove();
     cfg->music_player->Play();
 
@@ -1671,7 +1658,7 @@ int Game::CreateStock(){
 
 void Game::StartCollapse(){
 
-    if(this->Evolving() || this->finished) return;
+    if(this->Evolving() || this->Finished()) return;
     this->cubes_collapsing = true;
     for(int x = 0; x < Game::n; x++)
         for(int y = 0; y < Game::n; y++)
@@ -1715,8 +1702,7 @@ bool Game::ContinueCollapse(){
 
 void Game::UseChangeStillCamera(){
 
-    if(this->Starting() || this->finished) return;
-    if(this->camera != this->player->camera)
+    if(this->player == NULL || this->camera != this->player->camera)
         this->still_camera = (this->still_camera + 1) % 4;
     this->camera = this->still_cameras[this->still_camera];
     cfg->display->PostRedisplay();
@@ -1725,9 +1711,7 @@ void Game::UseChangeStillCamera(){
 
 void Game::UsePlayerCamera(){
 
-    if(this->Starting() || this->finished ||
-       this->camera == this->player->camera)
-        return;
+    if(this->player == NULL || this->camera == this->player->camera) return;
     this->camera = this->player->camera;
     cfg->display->PostRedisplay();
 
@@ -1735,7 +1719,6 @@ void Game::UsePlayerCamera(){
 
 void Game::ChangeGridLines(){
 
-    if(this->Starting() || this->finished) return;
     this->grid_lines = (Game::GridVisibility)((this->grid_lines + 1) % 4);
     cfg->display->PostRedisplay();
 
@@ -1743,7 +1726,6 @@ void Game::ChangeGridLines(){
 
 void Game::ChangeGridPlanes(){
 
-    if(this->Starting() || this->finished) return;
     this->grid_planes = (Game::GridVisibility)((this->grid_planes + 1) % 4);
     cfg->display->PostRedisplay();
 
@@ -1867,11 +1849,17 @@ void Game::Visualize(){
     this->VisualizeWalls();
 
     glDisable(GL_LIGHTING);
-    if(this->grid_lines <= Game::VISIBLE_PLAYER_FULL)
-        this->player->VisualizeGridLines(this->grid_lines == Game::VISIBLE_PLAYER_FULL);
+    if(this->grid_lines <= Game::VISIBLE_PLAYER_FULL){
+        if(this->player != NULL)
+            this->player->VisualizeGridLines(this->grid_lines ==
+                                             Game::VISIBLE_PLAYER_FULL);
+    }
     else if(this->grid_lines == Game::VISIBLE_ALL) Game::VisualizeGridLines();
-    if(this->grid_planes <= Game::VISIBLE_PLAYER_FULL)
-        this->player->VisualizeGridPlanes(this->grid_planes == Game::VISIBLE_PLAYER_FULL);
+    if(this->grid_planes <= Game::VISIBLE_PLAYER_FULL){
+        if(this->player != NULL)
+            this->player->VisualizeGridPlanes(this->grid_planes ==
+                                              Game::VISIBLE_PLAYER_FULL);
+    }
     else if(this->grid_planes == Game::VISIBLE_ALL) Game::VisualizeGridPlanes();
     glEnable(GL_LIGHTING);
 
@@ -2501,7 +2489,7 @@ bool MusicPlayer::DecreaseVolume(){
 void MusicPlayer::Play(){
 
     Mix_Music *const music = (game->Starting() ? NULL :
-                              game->finished ? MusicPlayer::finished :
+                              game->Finished() ? MusicPlayer::finished :
                               game->sun == NULL ? MusicPlayer::night_time :
                               MusicPlayer::day_time);
     if(this->music == music) return;
@@ -3203,7 +3191,7 @@ void Configuration::Visualize(){
     glTranslatef(0.0, 0.0, -1.0);
 
     glDisable(GL_LIGHTING);
-    if(game->finished){
+    if(game->Finished()){
         glTranslatef(0.0, 0.0, 0.01);
         this->display->VisualizeDimLayer();
         glTranslatef(0.0, 0.0, 0.01);
